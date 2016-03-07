@@ -11,6 +11,7 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
+import javax.xml.bind.annotation.XmlTransient;
 
 @Entity
 @Table(name="CLIENTES")
@@ -27,10 +28,12 @@ public class Cliente implements Serializable {
 
 	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
 	@JoinColumn(name = "ruc_cliente_fk", referencedColumnName="ruc_cliente")
+	@XmlTransient
 	private Set<Venta> ventas;
 	
 	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
 	@JoinColumn(name = "fk_ruc_cliente_pago", referencedColumnName="ruc_cliente")
+	@XmlTransient
 	private Set<Pago> pagos;
 
 	public Cliente() {

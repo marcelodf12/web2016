@@ -11,6 +11,7 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
+import javax.xml.bind.annotation.XmlTransient;
 
 @Entity
 @Table(name="PROVEEDORES")
@@ -25,8 +26,9 @@ public class Proveedor implements Serializable {
 
 	private String nombre;
 
-	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
 	@JoinColumn(name = "ruc_proveedor_fk", referencedColumnName="ruc_proveedor")
+	@XmlTransient
 	private Set<Compra> compras;
 
 	public Proveedor() {
