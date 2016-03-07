@@ -3,6 +3,7 @@ package py.pol.una.ii.pw.model;
 import java.io.Serializable;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -20,6 +21,8 @@ import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
+
+import py.pol.una.ii.pw.dto.VentaDto;
 
 /**
  * The persistent class for the ventas database table.
@@ -51,6 +54,12 @@ public class Venta implements Serializable {
 	private Cliente cliente;
 
 	public Venta() {
+	}
+	
+	public Venta(VentaDto ventaDto){
+		this.fecha = ventaDto.getFecha();
+		this.montoTotal = 0;
+		this.ventaDetalles = new ArrayList<VentaDetalle>();
 	}
 
 	public void edit(String fecha, Integer montoTotal,
