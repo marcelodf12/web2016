@@ -15,6 +15,7 @@ import javax.persistence.OneToMany;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.validation.constraints.Min;
+import javax.xml.bind.annotation.XmlTransient;
 
 
 /**
@@ -43,10 +44,12 @@ public class Producto implements Serializable {
 	
 	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
 	@JoinColumn(name = "id_producto_fk_compra", referencedColumnName="id_producto")
+	@XmlTransient
 	private Set<Compra> compras;
 	
 	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
 	@JoinColumn(name = "id_producto_fk_venta", referencedColumnName="id_producto")
+	@XmlTransient
 	private Set<Venta> ventas;
 
 	public Producto() {

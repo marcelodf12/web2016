@@ -1,13 +1,28 @@
 package py.pol.una.ii.pw.model;
 
 import java.io.Serializable;
-
-import javax.persistence.*;
-
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
+import javax.persistence.SequenceGenerator;
+import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
+
+import py.pol.una.ii.pw.dto.CompraDto;
 
 /**
  * The persistent class for the compras database table.
@@ -37,8 +52,14 @@ public class Compra implements Serializable {
 	@ManyToOne
 	@JoinColumn(name = "ruc_proveedor_fk")
 	private Proveedor proveedor;
-
+	
 	public Compra() {
+	}
+	
+	public Compra(CompraDto compraDto){
+		this.fecha = compraDto.getFecha();
+		this.montoTotal = 0;
+		this.compraDetalles = new ArrayList<CompraDetalle>();
 	}
 
 	public void edit(String fecha, Integer montoTotal,
