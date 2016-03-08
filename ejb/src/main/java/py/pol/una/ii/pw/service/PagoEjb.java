@@ -1,5 +1,6 @@
 package py.pol.una.ii.pw.service;
 
+import java.util.Date;
 import java.util.List;
 
 import javax.ejb.Stateless;
@@ -34,6 +35,7 @@ public class PagoEjb {
 			}else{
 				pago.setTotal(p.getTotal());
 				pago.getCliente().setDeuda(pago.getCliente().getDeuda() - p.getTotal());
+				pago.setFecha(new Date());
 				em.persist(pago);
 				r.setData(pago);
 				r.setSuccess(true);

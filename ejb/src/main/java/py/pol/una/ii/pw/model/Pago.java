@@ -1,6 +1,7 @@
 package py.pol.una.ii.pw.model;
 
 import java.io.Serializable;
+import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -11,7 +12,8 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
-import javax.xml.bind.annotation.XmlTransient;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 
 @Entity
 @Table(name="PAGOS")
@@ -25,6 +27,10 @@ public class Pago implements Serializable {
 	private Long id;
 
 	private Integer total;
+	
+	@Temporal(TemporalType.DATE)
+	private Date fecha;
+
 	
 	@ManyToOne
 	@JoinColumn(name="fk_ruc_cliente_pago")
@@ -58,5 +64,14 @@ public class Pago implements Serializable {
 		this.cliente = cliente;
 	}
 
+	public Date getFecha() {
+		return fecha;
+	}
+
+	public void setFecha(Date fecha) {
+		this.fecha = fecha;
+	}
+
+	
 	
 }
