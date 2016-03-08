@@ -25,6 +25,8 @@ public class Cliente implements Serializable {
 	private Boolean activo;
 
 	private String nombre;
+	
+	private Integer deuda;
 
 	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
 	@JoinColumn(name = "ruc_cliente_fk", referencedColumnName="ruc_cliente")
@@ -40,7 +42,7 @@ public class Cliente implements Serializable {
 	}
 
 	
-	
+	@XmlTransient
 	public Set<Pago> getPagos() {
 		return pagos;
 	}
@@ -58,6 +60,18 @@ public class Cliente implements Serializable {
 		this.ruc = ruc;
 		this.nombre = nombre;
 		this.activo = true;
+	}
+
+
+
+	public Integer getDeuda() {
+		return deuda;
+	}
+
+
+
+	public void setDeuda(Integer deuda) {
+		this.deuda = deuda;
 	}
 
 
@@ -86,6 +100,7 @@ public class Cliente implements Serializable {
 		this.nombre = nombre;
 	}
 
+	@XmlTransient
 	public Set<Venta> getVentas() {
 		return this.ventas;
 	}

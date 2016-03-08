@@ -69,6 +69,7 @@ public class Proveedor implements Serializable {
 		this.nombre = nombre;
 	}
 
+	@XmlTransient
 	public Set<Compra> getCompras() {
 		return this.compras;
 	}

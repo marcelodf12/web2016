@@ -3,6 +3,7 @@ package py.pol.una.ii.pw.model;
 import java.io.Serializable;
 
 import javax.persistence.*;
+import javax.xml.bind.annotation.XmlTransient;
 
 @Entity
 @Table(name="COMPRA_DETALLES")
@@ -21,6 +22,7 @@ public class CompraDetalle implements Serializable {
 
 	@ManyToOne
 	@JoinColumn(name="id_compra_fk")
+	@XmlTransient
 	private Compra compra;
 
 	@ManyToOne
@@ -65,6 +67,7 @@ public class CompraDetalle implements Serializable {
 		this.precio = precio;
 	}
 
+	@XmlTransient
 	public Compra getCompra() {
 		return this.compra;
 	}

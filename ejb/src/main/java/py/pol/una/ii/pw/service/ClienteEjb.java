@@ -20,6 +20,7 @@ public class ClienteEjb {
 		Respuesta<Cliente> r = new Respuesta<Cliente>();
 		try {
 			c.setActivo(true);
+			c.setDeuda(0);
 			em.persist(c);
 			r.setData(c);
 			r.setMessages("El cliente ha sido creado correctamente");

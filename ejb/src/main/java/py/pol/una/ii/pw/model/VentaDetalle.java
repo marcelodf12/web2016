@@ -10,6 +10,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
+import javax.xml.bind.annotation.XmlTransient;
 
 @Entity
 @Table(name="VENTA_DETALLE")
@@ -31,6 +32,7 @@ public class VentaDetalle implements Serializable {
 	
 	@ManyToOne
 	@JoinColumn(name="id_venta_fk")
+	@XmlTransient
 	private Venta venta;
 
 	public VentaDetalle() {
@@ -75,6 +77,7 @@ public class VentaDetalle implements Serializable {
 		this.producto = producto;
 	}
 
+	@XmlTransient
 	public Venta getVenta() {
 		return venta;
 	}
