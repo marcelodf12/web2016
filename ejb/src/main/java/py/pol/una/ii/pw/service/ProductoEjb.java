@@ -1,5 +1,8 @@
 package py.pol.una.ii.pw.service;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.ejb.Stateless;
@@ -8,6 +11,7 @@ import javax.persistence.PersistenceContext;
 import javax.persistence.TypedQuery;
 
 import py.pol.una.ii.pw.model.Producto;
+import py.pol.una.ii.pw.model.ProductoDuplicado;
 import py.pol.una.ii.pw.util.Respuesta;
 
 @Stateless
@@ -132,6 +136,28 @@ public class ProductoEjb {
 		return null;
 	}
 	
+	private Producto findByName(String nombre){
+		TypedQuery<Producto> query = em.createQuery(
+				"SELECT p FROM Producto p WHERE p.nombre = :nombre", Producto.class);
+		query.setParameter("id", nombre);
+		List<Producto> e = query.getResultList();
+		if(e.size() > 0) {
+			return e.get(0);			
+		}
+		return null;
+	}
+	
+	private ProductoDuplicado findProductoDuplicado(Long id){
+		TypedQuery<ProductoDuplicado> query = em.createQuery(
+				"SELECT p FROM ProductoDuplicado p WHERE p.producto.id = :id", ProductoDuplicado.class);
+		query.setParameter("id", id);
+		List<ProductoDuplicado> e = query.getResultList();
+		if(e.size() > 0) {
+			return e.get(0);			
+		}
+		return null;
+	}
+	
 	private List<Producto> findAll(){
 		TypedQuery<Producto> query = em.createQuery(
 				"SELECT p FROM Producto p WHERE p.activo = true", Producto.class);
@@ -140,5 +166,62 @@ public class ProductoEjb {
 			return e;			
 		}
 		return null;
+	}
+	
+	public Respuesta<String> cargaMasiva(String file){
+		Respuesta<String> r = new Respuesta<String>();
+		Boolean fallo = false;
+		ArrayList<Integer> errores = new ArrayList<Integer>();
+		BufferedReader br = null;
+		String line = "";
+		Integer numeroDeLinea = 0;
+		String nombre = null;
+		try {
+			br = new BufferedReader(new FileReader(file));
+			while ((line = br.readLine()) != null) {
+				
+				try{
+					numeroDeLinea++;
+					String campos[] = line.split(";");
+					if(campos.length==2){
+						nombre = campos[0];
+						Integer precio = Integer.valueOf(campos[1]);
+						Producto p = new Producto();
+						p.setActivo(true);
+						p.setNombre(nombre);
+						p.setPrecio(precio);
+						em.persist(p);
+					}else{
+						errores.add(numeroDeLinea);
+						fallo = true;
+					}
+				}catch(Exception e){
+					errores.add(numeroDeLinea);
+					fallo = true;
+					Producto p1 = findByName(nombre);
+					ProductoDuplicado pd = findProductoDuplicado(p1.getId());
+					if(pd == null){
+						pd = new ProductoDuplicado();
+						pd.setProducto(p1);
+						pd.setCantidad(0);
+					}
+					pd.setCantidad(pd.getCantidad()+1);
+					em.persist(pd);
+				}
+			}
+			
+		} catch (Exception e) {
+			// TODO: handle exception
+		}
+		r.setSuccess(fallo);
+		if(fallo){
+			String mes = "ERRORES EN LAS LINEAS: ";
+			for(Integer i: errores){
+				mes += i.toString() + ", ";
+			}
+			r.setMessages(mes);
+		}
+		
+		return r;
 	}
 }

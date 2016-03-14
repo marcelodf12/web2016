@@ -10,6 +10,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
+import javax.validation.constraints.Min;
 import javax.xml.bind.annotation.XmlTransient;
 
 @Entity
@@ -22,6 +23,7 @@ public class VentaDetalle implements Serializable {
 	@GeneratedValue(strategy=GenerationType.SEQUENCE, generator="seqVentaDetalle")
 	private Integer id;
 
+	@Min(0)
 	private Integer cantidad;
 
 	private Integer precio;

@@ -35,6 +35,7 @@ public class Producto implements Serializable {
 
 	private Boolean activo;
 
+	@Column(unique=true)
 	private String nombre;
 
 	private Integer precio;
