@@ -19,7 +19,6 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
 
 import org.apache.commons.io.IOUtils;
 import org.jboss.resteasy.plugins.providers.multipart.InputPart;
@@ -70,7 +69,7 @@ public class ProductoRest {
 	@POST
 	@Path("/file")
 	@Consumes("multipart/form-data")
-	public Response uploadFile(MultipartFormDataInput input) throws URISyntaxException {
+	public Respuesta<String> uploadFile(MultipartFormDataInput input) throws URISyntaxException {
 
 		String fileName = "";
 		Respuesta<String> r = null;
@@ -105,13 +104,7 @@ public class ProductoRest {
 			}
 
 		}
-
-		try {
-			java.net.URI location = new java.net.URI("http://localhost:8000/");
-			return Response.seeOther(location).header("Access-Control-Allow-Origin", "*").entity(r).build();
-		} catch (URISyntaxException e) {
-			return Response.status(500).entity("ERROR interno").header("Access-Control-Allow-Origin", "*").build();
-		}
+		return r;
 	}
 
 	/**

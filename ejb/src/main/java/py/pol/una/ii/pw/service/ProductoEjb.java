@@ -2,10 +2,15 @@ package py.pol.una.ii.pw.service;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.annotation.Resource;
+import javax.ejb.SessionContext;
 import javax.ejb.Stateless;
+import javax.ejb.TransactionAttribute;
+import javax.ejb.TransactionAttributeType;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.TypedQuery;
@@ -14,21 +19,29 @@ import py.pol.una.ii.pw.model.Producto;
 import py.pol.una.ii.pw.model.ProductoDuplicado;
 import py.pol.una.ii.pw.util.Respuesta;
 
+
 @Stateless
 public class ProductoEjb {
 	
 	@PersistenceContext
 	private EntityManager em;
 	
+	@Resource
+	private SessionContext context;
+	
 	public Respuesta<Producto> nuevo(Producto p){
 		Respuesta<Producto> r = new Respuesta<Producto>();
 		try {
 			p.setActivo(true);
-			em.persist(p);
-			r.setData(p);
-			r.setMessages("El producto ha sido creado correctamente");
-			r.setReason("");
-			r.setSuccess(true);
+			if(this.findByName(p.getNombre())==null){
+				em.persist(p);
+				r.setData(p);
+				r.setMessages("El producto ha sido creado correctamente");
+				r.setReason("");
+				r.setSuccess(true);
+			}else{
+				throw new Exception("Producto duplicado");
+			}
 		} catch (Exception e) {
 			r.setData(null);
 			r.setMessages("Error al persistir el producto");
@@ -139,7 +152,7 @@ public class ProductoEjb {
 	private Producto findByName(String nombre){
 		TypedQuery<Producto> query = em.createQuery(
 				"SELECT p FROM Producto p WHERE p.nombre = :nombre", Producto.class);
-		query.setParameter("id", nombre);
+		query.setParameter("nombre", nombre);
 		List<Producto> e = query.getResultList();
 		if(e.size() > 0) {
 			return e.get(0);			
@@ -168,6 +181,7 @@ public class ProductoEjb {
 		return null;
 	}
 	
+	@TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
 	public Respuesta<String> cargaMasiva(String file){
 		Respuesta<String> r = new Respuesta<String>();
 		Boolean fallo = false;
@@ -179,7 +193,7 @@ public class ProductoEjb {
 		try {
 			br = new BufferedReader(new FileReader(file));
 			while ((line = br.readLine()) != null) {
-				
+				System.out.println(" * " + line);
 				try{
 					numeroDeLinea++;
 					String campos[] = line.split(";");
@@ -190,31 +204,36 @@ public class ProductoEjb {
 						p.setActivo(true);
 						p.setNombre(nombre);
 						p.setPrecio(precio);
-						em.persist(p);
+						Respuesta<Producto> r1 = this.nuevo(p);
+						if(!r1.getSuccess()){
+							errores.add(numeroDeLinea);
+							fallo = true;
+							persistirProductoDuplicado(nombre);
+						}
+						
 					}else{
 						errores.add(numeroDeLinea);
 						fallo = true;
 					}
 				}catch(Exception e){
-					errores.add(numeroDeLinea);
-					fallo = true;
-					Producto p1 = findByName(nombre);
-					ProductoDuplicado pd = findProductoDuplicado(p1.getId());
-					if(pd == null){
-						pd = new ProductoDuplicado();
-						pd.setProducto(p1);
-						pd.setCantidad(0);
-					}
-					pd.setCantidad(pd.getCantidad()+1);
-					em.persist(pd);
+
 				}
 			}
 			
 		} catch (Exception e) {
-			// TODO: handle exception
+			fallo = true;
+		} finally {
+			if(br!=null)
+				try {
+					br.close();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 		}
 		r.setSuccess(fallo);
 		if(fallo){
+			//context.setRollbackOnly();
 			String mes = "ERRORES EN LAS LINEAS: ";
 			for(Integer i: errores){
 				mes += i.toString() + ", ";
@@ -223,5 +242,18 @@ public class ProductoEjb {
 		}
 		
 		return r;
+	}
+	
+	@TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
+	private void persistirProductoDuplicado (String nombre){
+		Producto p1 = findByName(nombre);
+		ProductoDuplicado pd = findProductoDuplicado(p1.getId());
+		if(pd == null){
+			pd = new ProductoDuplicado();
+			pd.setProducto(p1);
+			pd.setCantidad(0);
+		}
+		pd.setCantidad(pd.getCantidad()+1);
+		em.persist(pd);
 	}
 }
