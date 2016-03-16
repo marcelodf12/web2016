@@ -8,5 +8,8 @@
         <dependent-module archiveName="EjbJaxRS-ejb.jar" deploy-path="/" handle="module:/resource/EjbJaxRS-ejb/EjbJaxRS-ejb">
             <dependency-type>uses</dependency-type>
         </dependent-module>
+        <dependent-module archiveName="jta.jar" deploy-path="/lib" handle="module:/classpath/var/M2_REPO/javax/transaction/jta/1.1/jta-1.1.jar">
+            <dependency-type>uses</dependency-type>
+        </dependent-module>
     </wb-module>
 </project-modules>
