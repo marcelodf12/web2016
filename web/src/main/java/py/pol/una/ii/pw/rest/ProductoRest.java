@@ -101,6 +101,12 @@ public class ProductoRest {
 				r.setMessages("IOException");
 				r.setReason(e.getMessage());
 				e.printStackTrace();
+			} catch ( Exception e) {
+				r = new Respuesta<String>();
+				r.setSuccess(false);
+				r.setMessages("Exception");
+				r.setReason(e.getMessage());
+				e.printStackTrace();
 			}
 
 		}

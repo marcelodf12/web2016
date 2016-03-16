@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.annotation.Resource;
+import javax.ejb.EJBTransactionRolledbackException;
 import javax.ejb.SessionContext;
 import javax.ejb.Stateless;
 import javax.ejb.TransactionAttribute;
@@ -35,20 +36,26 @@ public class ProductoEjb {
 		try {
 			p.setActivo(true);
 			// En vez de colocar este if hay que hacer un try:catch
-			// Pero por algun motivo no funciona
+			// Pero por no funciona porque la excepcion se lanza al final
+			// de la transaccion cuando se trata de comitear
 			if(this.findByName(p.getNombre())==null){
-				em.persist(p);
+				this.persistirProducto(p);
 				r.setData(p);
 				r.setMessages("El producto ha sido creado correctamente");
 				r.setReason("");
 				r.setSuccess(true);
-			}else{ // Todo este bloque else no seria necesario si funcionara el try:catch
+			}else{ // Todo este bloque else no seria necesario si
+				   //funcionara el try:catch
 				this.persistirProductoDuplicado(p.getNombre());
 				throw new Exception("Producto duplicado");
 			}
-		//} catch (SQLException ex){
-		//	this.persistirProductoDuplicado(p.getNombre());
-		} catch (Exception e) {
+		} catch (EJBTransactionRolledbackException ex){
+			this.persistirProductoDuplicado(p.getNombre());
+			r.setData(null);
+			r.setMessages("Error al persistir el producto");
+			r.setReason(ex.getMessage());
+			r.setSuccess(false);
+		} catch (Exception e) {	
 			r.setData(null);
 			r.setMessages("Error al persistir el producto");
 			r.setReason(e.getMessage());
@@ -58,6 +65,10 @@ public class ProductoEjb {
 	}
 	
 	
+	public void persistirProducto(Producto p) throws EJBTransactionRolledbackException
+	{
+		em.persist(p);
+	}
 	
 	public Respuesta<Producto> modificar(Long id, Producto p){
 		Respuesta<Producto> r = new Respuesta<Producto>();
