@@ -29,19 +29,25 @@ public class ProductoEjb {
 	@Resource
 	private SessionContext context;
 	
+	@TransactionAttribute(TransactionAttributeType.REQUIRED)
 	public Respuesta<Producto> nuevo(Producto p){
 		Respuesta<Producto> r = new Respuesta<Producto>();
 		try {
 			p.setActivo(true);
+			// En vez de colocar este if hay que hacer un try:catch
+			// Pero por algun motivo no funciona
 			if(this.findByName(p.getNombre())==null){
 				em.persist(p);
 				r.setData(p);
 				r.setMessages("El producto ha sido creado correctamente");
 				r.setReason("");
 				r.setSuccess(true);
-			}else{
+			}else{ // Todo este bloque else no seria necesario si funcionara el try:catch
+				this.persistirProductoDuplicado(p.getNombre());
 				throw new Exception("Producto duplicado");
 			}
+		//} catch (SQLException ex){
+		//	this.persistirProductoDuplicado(p.getNombre());
 		} catch (Exception e) {
 			r.setData(null);
 			r.setMessages("Error al persistir el producto");
@@ -50,6 +56,8 @@ public class ProductoEjb {
 		}
 		return r;
 	}
+	
+	
 	
 	public Respuesta<Producto> modificar(Long id, Producto p){
 		Respuesta<Producto> r = new Respuesta<Producto>();
@@ -208,9 +216,7 @@ public class ProductoEjb {
 						if(!r1.getSuccess()){
 							errores.add(numeroDeLinea);
 							fallo = true;
-							persistirProductoDuplicado(nombre);
 						}
-						
 					}else{
 						errores.add(numeroDeLinea);
 						fallo = true;
@@ -231,9 +237,9 @@ public class ProductoEjb {
 					e.printStackTrace();
 				}
 		}
-		r.setSuccess(fallo);
+		r.setSuccess(!fallo);
 		if(fallo){
-			//context.setRollbackOnly();
+			context.setRollbackOnly();
 			String mes = "ERRORES EN LAS LINEAS: ";
 			for(Integer i: errores){
 				mes += i.toString() + ", ";
@@ -248,7 +254,7 @@ public class ProductoEjb {
 	private void persistirProductoDuplicado (String nombre){
 		Producto p1 = findByName(nombre);
 		ProductoDuplicado pd = findProductoDuplicado(p1.getId());
-		if(pd == null){
+		if(pd == null){	
 			pd = new ProductoDuplicado();
 			pd.setProducto(p1);
 			pd.setCantidad(0);
