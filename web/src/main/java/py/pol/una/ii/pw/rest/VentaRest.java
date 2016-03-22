@@ -30,7 +30,16 @@ public class VentaRest {
 	
 	@POST
 	public Respuesta<Venta> alta(VentaDto c){
-		return ventaEjb.alta(c);
+		Respuesta<Venta> r = new Respuesta<Venta>();
+		try {
+			return ventaEjb.alta(c);
+		} catch (Exception e) {
+			r.setData(null);
+			r.setMessages("No hay stock suficiente");
+			r.setReason(e.getMessage());
+			return r;
+		}
+		
 	}
 
 }

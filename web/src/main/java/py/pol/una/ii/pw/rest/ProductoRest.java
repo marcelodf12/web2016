@@ -5,10 +5,14 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
+import javax.ejb.EJB;
 import javax.inject.Inject;
+import javax.naming.NamingException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -17,15 +21,20 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.apache.commons.io.IOUtils;
+import org.jboss.resteasy.annotations.providers.multipart.PartType;
 import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 
+import py.pol.una.ii.pw.dto.ProductoDto;
 import py.pol.una.ii.pw.model.Producto;
 import py.pol.una.ii.pw.service.ProductoEjb;
+import py.pol.una.ii.pw.service.ProductoEjbStateful;
+import py.pol.una.ii.pw.util.Pagina;
 import py.pol.una.ii.pw.util.Respuesta;
 
 @Path("/producto")
@@ -35,6 +44,9 @@ public class ProductoRest {
 
 	@Inject
 	private ProductoEjb productoEjb;
+	
+	@EJB
+	ProductoEjbStateful productoEjbStateful;
 
 	@GET
 	@Path("/{id:[0-9][0-9]*}")
@@ -43,8 +55,25 @@ public class ProductoRest {
 	}
 
 	@GET
-	public Respuesta<List<Producto>> buscarTodos() {
-		return productoEjb.listarTodos();
+	@Path("/pagina")
+	public Respuesta<Pagina<Producto>> buscar(@QueryParam("inicio") Integer inicio, @QueryParam("cantidad") Integer cant) {
+		return productoEjb.listarTodos(inicio, cant);
+	}
+	
+	@GET
+    @Produces("multipart/mixed")
+    @PartType("application/xml")
+	public List<ProductoDto>  buscarTodos() throws NamingException{
+		
+		List<ProductoDto> list = new ArrayList<ProductoDto>();
+		productoEjbStateful.iniciar();
+		while(productoEjbStateful.hasNext()){
+			Producto p = productoEjbStateful.nextProducto();
+			if(p!=null)
+				list.add(new ProductoDto(p));
+		}
+			
+		return list;
 	}
 
 	@POST
@@ -114,27 +143,31 @@ public class ProductoRest {
 	}
 
 	/**
-	 * header sample { Content-Type=[image/png], Content-Disposition=[form-data;
+	 * header { Content-Type=[image/png], Content-Disposition=[form-data;
 	 * name="file"; filename="filename.extension"] }
 	 **/
-	// get uploaded filename, is there a easy way in RESTEasy?
 	private String getFileName(MultivaluedMap<String, String> header) {
 
 		String[] contentDisposition = header.getFirst("Content-Disposition").split(";");
 
+		Random rnd = new Random();
+		Integer ram = new Integer((int) (rnd.nextDouble()*1000+1));
+		
 		for (String filename : contentDisposition) {
 			if ((filename.trim().startsWith("filename"))) {
 
 				String[] name = filename.split("=");
 
 				String finalFileName = name[1].trim().replaceAll("\"", "");
-				return finalFileName;
+				
+				
+				return finalFileName + ram.toString() + ".txt";
 			}
 		}
-		return "unknown";
+		return "unknown" + ram.toString() + ".txt";
 	}
 
-	// save to somewhere
+	
 	private void writeFile(byte[] content, String filename) throws IOException {
 
 		File file = new File(filename);

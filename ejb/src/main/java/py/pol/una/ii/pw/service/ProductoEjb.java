@@ -18,6 +18,7 @@ import javax.persistence.TypedQuery;
 
 import py.pol.una.ii.pw.model.Producto;
 import py.pol.una.ii.pw.model.ProductoDuplicado;
+import py.pol.una.ii.pw.util.Pagina;
 import py.pol.una.ii.pw.util.Respuesta;
 
 
@@ -65,6 +66,7 @@ public class ProductoEjb {
 	}
 	
 	
+	//@TransactionAttribute(TransactionAttributeType.REQUIRED_NEW)
 	public void persistirProducto(Producto p) throws EJBTransactionRolledbackException
 	{
 		em.persist(p);
@@ -136,10 +138,10 @@ public class ProductoEjb {
 		return r;
 	}
 	
-	public Respuesta<List<Producto>> listarTodos(){
-		Respuesta<List<Producto>> r = new Respuesta<List<Producto>>();
+	public Respuesta<Pagina<Producto>> listarTodos(Integer inicio, Integer cant){
+		Respuesta<Pagina<Producto>> r = new Respuesta<Pagina<Producto>>();
 		try {
-			List<Producto> data = this.findAll();
+			Pagina<Producto> data = this.findList(inicio, cant);
 			if(data == null){
 				r.setMessages("La base de datos esta vacia");
 				r.setSuccess(false);
@@ -157,7 +159,7 @@ public class ProductoEjb {
 		return r;
 	}
 	
-	private Producto findById(Long id){
+	public Producto findById(Long id){
 		TypedQuery<Producto> query = em.createQuery(
 				"SELECT p FROM Producto p WHERE p.id = :id AND p.activo = true", Producto.class);
 		query.setParameter("id", id);
@@ -190,12 +192,32 @@ public class ProductoEjb {
 		return null;
 	}
 	
-	private List<Producto> findAll(){
+//	private List<Producto> findAll(){
+//		TypedQuery<Producto> query = em.createQuery(
+//				"SELECT p FROM Producto p WHERE p.activo = true", Producto.class);
+//		List<Producto> e = query.getResultList();
+//		if(e.size() > 0) {
+//			return e;			
+//		}
+//		return null;
+//	}
+	
+	private Pagina<Producto> findList(Integer inicio, Integer cant){
+		if(cant<=0)
+			return null;
+		if(cant>100)
+			cant = 100;
+		Pagina<Producto> productos = new Pagina<Producto>();
 		TypedQuery<Producto> query = em.createQuery(
 				"SELECT p FROM Producto p WHERE p.activo = true", Producto.class);
-		List<Producto> e = query.getResultList();
+		TypedQuery<Long> queryCount = em.createQuery(
+				"SELECT count(p) FROM Producto p WHERE p.activo = true", Long.class);
+		Long total = (Long) queryCount.getSingleResult();
+		List<Producto> e = query.setFirstResult(inicio).setMaxResults(cant).getResultList();
 		if(e.size() > 0) {
-			return e;			
+			productos.setData(e);
+			productos.setTotal(total);
+			return productos;			
 		}
 		return null;
 	}
@@ -273,4 +295,6 @@ public class ProductoEjb {
 		pd.setCantidad(pd.getCantidad()+1);
 		em.persist(pd);
 	}
+
+
 }

@@ -15,6 +15,7 @@ import py.pol.una.ii.pw.dto.CompraDetalleDto;
 import py.pol.una.ii.pw.dto.CompraDto;
 import py.pol.una.ii.pw.model.Compra;
 import py.pol.una.ii.pw.model.CompraDetalle;
+import py.pol.una.ii.pw.model.Producto;
 import py.pol.una.ii.pw.util.Respuesta;
 
 @Stateless
@@ -105,9 +106,15 @@ public class CompraEjb {
 			CompraDetalle nuevoDet = new CompraDetalle();
 			nuevoDet.setCantidad(det.getCantidad());
 			nuevoDet.setPrecio(det.getPrecio());
-			nuevoDet.setProducto(productoEjb.buscarPorId(det.getIdProducto()).getData());
-			if(nuevoDet.getProducto()==null)
+			Producto p = productoEjb.buscarPorId(det.getIdProducto()).getData();
+			
+			if(p==null){
 				return null;
+			}else{
+				p.setStock(p.getStock()+det.getCantidad());
+				nuevoDet.setProducto(p);
+				em.persist(p);
+			}
 			compra.getCompraDetalles().add(nuevoDet);
 			nuevoDet.setCompra(compra);
 		}

@@ -13,6 +13,7 @@ import javax.persistence.TypedQuery;
 
 import py.pol.una.ii.pw.dto.VentaDetalleDto;
 import py.pol.una.ii.pw.dto.VentaDto;
+import py.pol.una.ii.pw.model.Producto;
 import py.pol.una.ii.pw.model.Venta;
 import py.pol.una.ii.pw.model.VentaDetalle;
 import py.pol.una.ii.pw.util.Respuesta;
@@ -56,6 +57,8 @@ public class VentaEjb {
 				r.setData(c);
 			}
 		} catch (Exception e) {
+			e.printStackTrace();
+			System.out.println(e.getStackTrace());
 			r.setData(null);
 			r.setMessages("Error al persistir la venta");
 			r.setReason(e.getMessage());
@@ -106,9 +109,16 @@ public class VentaEjb {
 			VentaDetalle nuevoDet = new VentaDetalle();
 			nuevoDet.setCantidad(det.getCantidad());
 			nuevoDet.setPrecio(det.getPrecio());
-			nuevoDet.setProducto(productoEjb.buscarPorId(det.getIdProducto()).getData());
-			if(nuevoDet.getProducto()==null)
+			Producto p = productoEjb.findById(det.getIdProducto());
+			
+			if(p==null){
 				return null;
+			}else{
+				p.setStock(p.getStock()-det.getCantidad());
+				em.persist(p);
+				nuevoDet.setProducto(p);
+				
+			}
 			venta.getVentaDetalles().add(nuevoDet);
 			nuevoDet.setVenta(venta);
 		}
