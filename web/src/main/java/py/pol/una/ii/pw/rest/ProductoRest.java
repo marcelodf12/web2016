@@ -5,14 +5,12 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
 import javax.ejb.EJB;
 import javax.inject.Inject;
-import javax.naming.NamingException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -26,9 +24,9 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.apache.commons.io.IOUtils;
-import org.jboss.resteasy.annotations.providers.multipart.PartType;
 import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
+import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataOutput;
 
 import py.pol.una.ii.pw.dto.ProductoDto;
 import py.pol.una.ii.pw.model.Producto;
@@ -61,19 +59,20 @@ public class ProductoRest {
 	}
 	
 	@GET
-    @Produces("multipart/mixed")
-    @PartType("application/xml")
-	public List<ProductoDto>  buscarTodos() throws NamingException{
-		
-		List<ProductoDto> list = new ArrayList<ProductoDto>();
+	@Produces("multipart/form-data")
+	public MultipartFormDataOutput  buscarTodos(){
+		MultipartFormDataOutput output = new MultipartFormDataOutput();
 		productoEjbStateful.iniciar();
 		while(productoEjbStateful.hasNext()){
 			Producto p = productoEjbStateful.nextProducto();
-			if(p!=null)
-				list.add(new ProductoDto(p));
+			if(p!=null){
+				ProductoDto p1 = new ProductoDto(p);
+				output.addPart(p1.cad(), MediaType.APPLICATION_XML_TYPE);
+			}
 		}
-			
-		return list;
+		System.out.println("***********");
+		productoEjbStateful.terminar();
+		return output;
 	}
 
 	@POST

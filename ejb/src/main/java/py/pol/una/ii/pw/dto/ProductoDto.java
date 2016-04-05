@@ -61,6 +61,9 @@ public class ProductoDto {
 		this.stock = stock;
 	}
 	
-	
+	public String cad(){
+		String r = "{" + nombre + "}\n";
+		return r;
+	}
 
 }

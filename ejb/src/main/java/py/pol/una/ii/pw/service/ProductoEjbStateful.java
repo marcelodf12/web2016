@@ -20,18 +20,24 @@ public class ProductoEjbStateful {
 	private Iterator<Producto> iterator;
 	
 	public void iniciar(){
+		System.out.println("inicio");
 		TypedQuery<Producto> query = em.createQuery(
 				"SELECT p FROM Producto p WHERE p.activo = true", Producto.class);
 		this.iterator = query.getResultList().iterator();
 	}
 	
 	public Producto nextProducto(){
+		System.out.print("++++ ");
 		Producto p = iterator.next();
+		System.out.println(p);
 		return p;
 	}
 	
 	public boolean hasNext(){
-		return iterator.hasNext();
+		System.out.print("- ");
+		boolean r = iterator.hasNext();
+		System.out.println(r);
+		return r;
 	}
 	
 	@Remove
