@@ -2,11 +2,13 @@ package py.pol.una.ii.pw.service;
 
 import java.util.List;
 
+import javax.ejb.EJB;
 import javax.ejb.Stateless;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.TypedQuery;
 
+import mapper.ClienteMapper;
 import py.pol.una.ii.pw.model.Cliente;
 import py.pol.una.ii.pw.util.Respuesta;
 
@@ -15,6 +17,9 @@ public class ClienteEjb {
 	
 	@PersistenceContext
 	private EntityManager em;
+	
+	@EJB
+	private MyBatisSingleton mb;
 	
 	public Respuesta<Cliente> nuevo(Cliente c){
 		Respuesta<Cliente> r = new Respuesta<Cliente>();
@@ -133,12 +138,18 @@ public class ClienteEjb {
 	}
 	
 	private List<Cliente> findAll(){
-		TypedQuery<Cliente> query = em.createQuery(
-				"SELECT c FROM Cliente c WHERE c.activo = true", Cliente.class);
-		List<Cliente> e = query.getResultList();
-		if(e.size() > 0) {
-			return e;			
+		ClienteMapper clienteMapper = mb.getClienteMapper();
+		if(clienteMapper!=null){
+			return clienteMapper.getAllClientes();
+		}else{
+			return null;
 		}
-		return null;
+		//TypedQuery<Cliente> query = em.createQuery(
+		//		"SELECT c FROM Cliente c WHERE c.activo = true", Cliente.class);
+		//List<Cliente> e = query.getResultList();
+		//if(e.size() > 0) {
+		//	return e;			
+		//}
+		//return null;
 	}
 }
