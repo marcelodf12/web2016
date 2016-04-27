@@ -37,6 +37,10 @@ public class MyBatisSingleton {
 		System.out.println("Inicialización");
 	}
 	
+	public SqlSession getSession(){
+		return sqlSessionFactory.openSession();
+	}
+	
 	public ClienteMapper getClienteMapper(){
 		SqlSession session = sqlSessionFactory.openSession();
 		try {

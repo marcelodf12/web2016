@@ -4,34 +4,34 @@ import java.util.List;
 
 import javax.ejb.EJB;
 import javax.ejb.Stateless;
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
-import javax.persistence.TypedQuery;
 
-import mapper.ClienteMapper;
+import DAO.ClienteDAO;
 import py.pol.una.ii.pw.model.Cliente;
 import py.pol.una.ii.pw.util.Respuesta;
 
 @Stateless
 public class ClienteEjb {
 	
-	@PersistenceContext
-	private EntityManager em;
+	//@PersistenceContext
+	//private EntityManager em;
 	
 	@EJB
-	private MyBatisSingleton mb;
+	private ClienteDAO clienteDao;
 	
 	public Respuesta<Cliente> nuevo(Cliente c){
 		Respuesta<Cliente> r = new Respuesta<Cliente>();
 		try {
 			c.setActivo(true);
 			c.setDeuda(0);
-			em.persist(c);
+			clienteDao.init();
+			clienteDao.persist(c);
+			clienteDao.commit();
 			r.setData(c);
 			r.setMessages("El cliente ha sido creado correctamente");
 			r.setReason("");
 			r.setSuccess(true);
 		} catch (Exception e) {
+			clienteDao.close();
 			r.setData(null);
 			r.setMessages("Error al persistir el cliente");
 			r.setReason(e.getMessage());
@@ -40,23 +40,28 @@ public class ClienteEjb {
 		return r;
 	}
 	
+
+	
 	public Respuesta<Cliente> modificar(String ruc, Cliente c){
 		Respuesta<Cliente> r = new Respuesta<Cliente>();
 		try {
-			Cliente nuevoCliente = this.findById(ruc);
+			clienteDao.init();
+			Cliente nuevoCliente = clienteDao.findById(ruc);
 			if(nuevoCliente == null){
 				r.setMessages("Error al modificar el cliente");
 				r.setReason("No existe el Cliente");
 				r.setSuccess(false);
 			}else{
 				nuevoCliente.setNombre(c.getNombre());
-				em.persist(nuevoCliente);
+				clienteDao.update(nuevoCliente);
+				clienteDao.commit();
 				r.setMessages("El cliente ha sido modificado correctamente");
 				r.setReason("");
 				r.setSuccess(true);
 			}
 			r.setData(nuevoCliente);
 		} catch (Exception e) {
+			clienteDao.close();
 			r.setData(null);
 			r.setMessages("Error al modificar el cliente");
 			r.setReason(e.getMessage());
@@ -68,13 +73,16 @@ public class ClienteEjb {
 	public Respuesta<Cliente> buscarPorId(String ruc){
 		Respuesta<Cliente> r = new Respuesta<Cliente>();
 		try {
-			Cliente nuevoCliente = this.findById(ruc);
+			clienteDao.init();
+			Cliente nuevoCliente = clienteDao.findById(ruc);
+			clienteDao.commit();
 			r.setData(nuevoCliente);
 			if(nuevoCliente == null)
 				r.setMessages("No se encuentra el cliente");
 			r.setReason("");
 			r.setSuccess(nuevoCliente != null);
 		} catch (Exception e) {
+			clienteDao.close();
 			r.setData(null);
 			r.setMessages("Error en la base de datos");
 			r.setReason(e.getMessage());
@@ -86,17 +94,21 @@ public class ClienteEjb {
 	public Respuesta<Cliente> eliminar(String ruc){
 		Respuesta<Cliente> r = new Respuesta<Cliente>();
 		try {
-			Cliente nuevoCliente = this.findById(ruc);
+			clienteDao.init();
+			Cliente nuevoCliente = clienteDao.findById(ruc);
+			
 			if(nuevoCliente == null){
 				r.setMessages("No se encuentra el cliente");
 			}else{				
-				em.persist(nuevoCliente);
 				nuevoCliente.setActivo(false);
+				clienteDao.update(nuevoCliente);
 			}
+			clienteDao.commit();
 			r.setData(nuevoCliente);
 			r.setReason("");
 			r.setSuccess(nuevoCliente != null);
 		} catch (Exception e) {
+			clienteDao.close();
 			r.setData(null);
 			r.setMessages("Error en la base de datos");
 			r.setReason(e.getMessage());
@@ -108,7 +120,9 @@ public class ClienteEjb {
 	public Respuesta<List<Cliente>> listarTodos(){
 		Respuesta<List<Cliente>> r = new Respuesta<List<Cliente>>();
 		try {
-			List<Cliente> data = this.findAll();
+			clienteDao.init();
+			List<Cliente> data = clienteDao.findAll();
+			clienteDao.commit();
 			if(data == null){
 				r.setMessages("La base de datos esta vacia");
 				r.setSuccess(false);
@@ -118,6 +132,7 @@ public class ClienteEjb {
 			}
 			r.setData(data);
 		} catch (Exception e) {
+			clienteDao.close();
 			r.setData(null);
 			r.setMessages("Error en la base de datos");
 			r.setReason(e.getMessage());
@@ -126,30 +141,5 @@ public class ClienteEjb {
 		return r;
 	}
 	
-	private Cliente findById(String ruc){
-		TypedQuery<Cliente> query = em.createQuery(
-				"SELECT c FROM Cliente c WHERE c.ruc = :ruc AND c.activo = true", Cliente.class);
-		query.setParameter("ruc", ruc);
-		List<Cliente> e = query.getResultList();
-		if(e.size() > 0) {
-			return e.get(0);			
-		}
-		return null;
-	}
-	
-	private List<Cliente> findAll(){
-		ClienteMapper clienteMapper = mb.getClienteMapper();
-		if(clienteMapper!=null){
-			return clienteMapper.getAllClientes();
-		}else{
-			return null;
-		}
-		//TypedQuery<Cliente> query = em.createQuery(
-		//		"SELECT c FROM Cliente c WHERE c.activo = true", Cliente.class);
-		//List<Cliente> e = query.getResultList();
-		//if(e.size() > 0) {
-		//	return e;			
-		//}
-		//return null;
-	}
+
 }
