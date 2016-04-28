@@ -12,7 +12,8 @@ import org.apache.ibatis.transaction.TransactionFactory;
 import org.apache.ibatis.transaction.jdbc.JdbcTransactionFactory;
 import org.postgresql.ds.PGPoolingDataSource;
 
-import mapper.ClienteMapper;
+import py.pol.una.ii.pw.mapper.ClienteMapper;
+import py.pol.una.ii.pw.mapper.ProveedorMapper;
 
 
 @Singleton
@@ -33,23 +34,12 @@ public class MyBatisSingleton {
 		Environment environment = new Environment("development", transactionFactory, source);
 		Configuration configuration = new Configuration(environment);
 		configuration.addMapper(ClienteMapper.class);
+		configuration.addMapper(ProveedorMapper.class);
 		sqlSessionFactory = new SqlSessionFactoryBuilder().build(configuration);
 		System.out.println("Inicialización");
 	}
 	
 	public SqlSession getSession(){
 		return sqlSessionFactory.openSession();
-	}
-	
-	public ClienteMapper getClienteMapper(){
-		SqlSession session = sqlSessionFactory.openSession();
-		try {
-			ClienteMapper cm = session.getMapper(ClienteMapper.class);
-			return cm;
-		} catch (Exception e) {
-			System.out.println("Error al abrir la base de datos");
-			System.out.println(e.getMessage());
-			return null;
-		}
 	}
 }

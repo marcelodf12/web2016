@@ -5,7 +5,7 @@ import java.util.List;
 import javax.ejb.EJB;
 import javax.ejb.Stateless;
 
-import DAO.ClienteDAO;
+import py.pol.una.ii.pw.dao.ClienteDAO;
 import py.pol.una.ii.pw.model.Cliente;
 import py.pol.una.ii.pw.util.Respuesta;
 

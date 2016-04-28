@@ -1,4 +1,4 @@
-package mapper;
+package py.pol.una.ii.pw.mapper;
 
 import java.util.List;
 

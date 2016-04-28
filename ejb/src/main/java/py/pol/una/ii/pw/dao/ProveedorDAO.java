@@ -1,4 +1,4 @@
-package DAO;
+package py.pol.una.ii.pw.dao;
 
 import java.util.List;
 
@@ -8,34 +8,34 @@ import javax.ejb.Stateful;
 
 import org.apache.ibatis.session.SqlSession;
 
-import mapper.ClienteMapper;
-import py.pol.una.ii.pw.model.Cliente;
+import py.pol.una.ii.pw.mapper.ProveedorMapper;
+import py.pol.una.ii.pw.model.Proveedor;
 import py.pol.una.ii.pw.service.MyBatisSingleton;
 
 @Stateful
-public class ClienteDAO {
+public class ProveedorDAO {
 	
 	@EJB
 	private MyBatisSingleton mb;
 	
 	private SqlSession session;
 	
-	private ClienteMapper cm;
+	private ProveedorMapper pm;
 	
 	public void init(){
 		session = mb.getSession();
 		try {
-			cm = session.getMapper(ClienteMapper.class);
+			pm = session.getMapper(ProveedorMapper.class);
 		} catch (Exception e) {
 			System.out.println("Error al abrir la base de datos");
 			System.out.println(e.getMessage());
 		}
 	}
 	
-	public void persist(Cliente c){
-		if(cm!=null){
+	public void persist(Proveedor c){
+		if(pm!=null){
 			try {
-				cm.persistCliente(c.getRuc(), c.getDeuda(), c.getNombre());
+				pm.persistProveedor(c.getRuc(), c.getNombre());
 			} catch (Exception e) {
 				System.out.println("Hubo un error");
 				System.out.println(e.getMessage());
@@ -43,10 +43,10 @@ public class ClienteDAO {
 			
 		}
 	}
-	public void update(Cliente c){
-		if(cm!=null){
+	public void update(Proveedor c){
+		if(pm!=null){
 			try {
-				cm.updateCliente(c.getRuc(), c.getDeuda(),c.getActivo(), c.getNombre());;
+				pm.updateProveedor(c.getRuc(),c.getActivo(), c.getNombre());;
 			} catch (Exception e) {
 				System.out.println("Hubo un error");
 				System.out.println(e.getMessage());
@@ -55,17 +55,17 @@ public class ClienteDAO {
 		}
 	}
 	
-	public Cliente findById(String ruc){
-		if(cm!=null){
-			return cm.getCliente(ruc);
+	public Proveedor findById(String ruc){
+		if(pm!=null){
+			return pm.getProveedor(ruc);
 		}else{
 			return null;
 		}
 	}
 	
-	public List<Cliente> findAll(){
-		if(cm!=null){
-			return cm.getAllClientes();
+	public List<Proveedor> findAll(){
+		if(pm!=null){
+			return pm.getAllProveedores();
 		}else{
 			return null;
 		}
