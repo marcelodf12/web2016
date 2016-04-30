@@ -46,12 +46,12 @@ public class Producto implements Serializable {
 	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
 	@JoinColumn(name = "id_producto_fk_compra", referencedColumnName="id_producto")
 	@XmlTransient
-	private Set<Compra> compras;
+	private Set<CompraDetalle> comprasDetalle;
 	
 	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
 	@JoinColumn(name = "id_producto_fk_venta", referencedColumnName="id_producto")
 	@XmlTransient
-	private Set<Venta> ventas;
+	private Set<VentaDetalle> ventasDetalle;
 
 	public Producto() {
 	}

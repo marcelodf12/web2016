@@ -3,19 +3,23 @@ package py.pol.una.ii.pw.service;
 import java.util.Date;
 import java.util.List;
 
+import javax.ejb.EJB;
 import javax.ejb.Stateless;
 import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
-import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.TypedQuery;
 
+import py.pol.una.ii.pw.dao.CompraDAO;
+import py.pol.una.ii.pw.dao.ProductoDAO;
+import py.pol.una.ii.pw.dao.ProveedorDAO;
 import py.pol.una.ii.pw.dto.CompraDetalleDto;
 import py.pol.una.ii.pw.dto.CompraDto;
 import py.pol.una.ii.pw.model.Compra;
 import py.pol.una.ii.pw.model.CompraDetalle;
 import py.pol.una.ii.pw.model.Producto;
+import py.pol.una.ii.pw.model.Proveedor;
 import py.pol.una.ii.pw.util.Respuesta;
 
 @Stateless
@@ -23,12 +27,15 @@ public class CompraEjb {
 	
 	@PersistenceContext
 	private EntityManager em;
-		
-	@Inject
-	private ProductoEjb productoEjb;
 	
-	@Inject
-	private ProveedorEjb proveedorEjb;
+	@EJB
+	private CompraDAO compraDao;
+	
+	@EJB
+	private ProveedorDAO proveedorDao;
+	
+	@EJB
+	private ProductoDAO productoDao;
 	
 	@TransactionAttribute(TransactionAttributeType.REQUIRED)
 	public Respuesta<Compra> alta(CompraDto compraDto){
@@ -43,14 +50,13 @@ public class CompraEjb {
 				return r;
 			}
 				
-			c.setProveedor(proveedorEjb.buscarPorId(compraDto.getRucProveedor()).getData());
+			
 			if(c.getProveedor()==null){
 				r.setMessages("La compra no se puede persistir");
 				r.setReason("No existe el proveedor");
 				r.setSuccess(false);
 				r.setData(null);
 			}else{
-				em.persist(c);
 				r.setSuccess(true);
 				r.setMessages("Compra guardada correctamente");
 				r.setData(c);
@@ -99,26 +105,32 @@ public class CompraEjb {
 	
 	private Compra nuevaCompra(CompraDto compraDto){
 		Compra compra = new Compra(compraDto);
+		proveedorDao.init();
+		Proveedor proveedor = proveedorDao.findById(compraDto.getRucProveedor());
+		compra.setProveedor(proveedor);
 		Integer montoTotal = 0;
 		compra.setFecha(new Date());
+		compraDao.init();
 		for(CompraDetalleDto det : compraDto.getCompraDetalles()){
 			montoTotal += det.getPrecio() * det.getCantidad();
 			CompraDetalle nuevoDet = new CompraDetalle();
 			nuevoDet.setCantidad(det.getCantidad());
-			nuevoDet.setPrecio(det.getPrecio());
-			Producto p = productoEjb.buscarPorId(det.getIdProducto()).getData();
-			
+			nuevoDet.setPrecio(det.getPrecio());	
+			Producto p = compraDao.findProducto(det.getIdProducto());
 			if(p==null){
 				return null;
 			}else{
 				p.setStock(p.getStock()+det.getCantidad());
 				nuevoDet.setProducto(p);
-				em.persist(p);
+				compraDao.updateProducto(p);
 			}
 			compra.getCompraDetalles().add(nuevoDet);
 			nuevoDet.setCompra(compra);
 		}
 		compra.setMontoTotal(montoTotal);
+		compraDao.persist(compra);
+		compraDao.commit();
+		proveedorDao.close();
 		return compra;
 	}
 

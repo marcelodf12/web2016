@@ -13,6 +13,8 @@ import org.apache.ibatis.transaction.jdbc.JdbcTransactionFactory;
 import org.postgresql.ds.PGPoolingDataSource;
 
 import py.pol.una.ii.pw.mapper.ClienteMapper;
+import py.pol.una.ii.pw.mapper.CompraMapper;
+import py.pol.una.ii.pw.mapper.ProductoMapper;
 import py.pol.una.ii.pw.mapper.ProveedorMapper;
 
 
@@ -35,7 +37,10 @@ public class MyBatisSingleton {
 		Configuration configuration = new Configuration(environment);
 		configuration.addMapper(ClienteMapper.class);
 		configuration.addMapper(ProveedorMapper.class);
+		configuration.addMapper(CompraMapper.class);
+		configuration.addMapper(ProductoMapper.class);
 		sqlSessionFactory = new SqlSessionFactoryBuilder().build(configuration);
+
 		System.out.println("Inicialización");
 	}
 	
