@@ -3,19 +3,23 @@ package py.pol.una.ii.pw.service;
 import java.util.Date;
 import java.util.List;
 
+import javax.ejb.EJB;
 import javax.ejb.Stateless;
 import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
-import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.TypedQuery;
 
+import py.pol.una.ii.pw.dao.VentaDAO;
+import py.pol.una.ii.pw.dao.ProductoDAO;
+import py.pol.una.ii.pw.dao.ClienteDAO;
 import py.pol.una.ii.pw.dto.VentaDetalleDto;
 import py.pol.una.ii.pw.dto.VentaDto;
-import py.pol.una.ii.pw.model.Producto;
 import py.pol.una.ii.pw.model.Venta;
 import py.pol.una.ii.pw.model.VentaDetalle;
+import py.pol.una.ii.pw.model.Producto;
+import py.pol.una.ii.pw.model.Cliente;
 import py.pol.una.ii.pw.util.Respuesta;
 
 @Stateless
@@ -23,12 +27,15 @@ public class VentaEjb {
 	
 	@PersistenceContext
 	private EntityManager em;
-		
-	@Inject
-	private ProductoEjb productoEjb;
 	
-	@Inject
-	private ClienteEjb clienteEjb;
+	@EJB
+	private VentaDAO ventaDao;
+	
+	@EJB
+	private ClienteDAO clienteDao;
+	
+	@EJB
+	private ProductoDAO productoDao;
 	
 	@TransactionAttribute(TransactionAttributeType.REQUIRED)
 	public Respuesta<Venta> alta(VentaDto ventaDto){
@@ -43,22 +50,18 @@ public class VentaEjb {
 				return r;
 			}
 				
-			c.setCliente(clienteEjb.buscarPorId(ventaDto.getRucCliente()).getData());
+			
 			if(c.getCliente()==null){
 				r.setMessages("La venta no se puede persistir");
 				r.setReason("No existe el cliente");
 				r.setSuccess(false);
 				r.setData(null);
 			}else{
-				c.getCliente().setDeuda(c.getCliente().getDeuda() + c.getMontoTotal());
-				em.persist(c);
 				r.setSuccess(true);
 				r.setMessages("Venta guardada correctamente");
 				r.setData(c);
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
-			System.out.println(e.getStackTrace());
 			r.setData(null);
 			r.setMessages("Error al persistir la venta");
 			r.setReason(e.getMessage());
@@ -102,27 +105,32 @@ public class VentaEjb {
 	
 	private Venta nuevaVenta(VentaDto ventaDto){
 		Venta venta = new Venta(ventaDto);
+		clienteDao.init();
+		Cliente cliente = clienteDao.findById(ventaDto.getRucCliente());
+		venta.setCliente(cliente);
 		Integer montoTotal = 0;
 		venta.setFecha(new Date());
+		ventaDao.init();
 		for(VentaDetalleDto det : ventaDto.getVentaDetalles()){
 			montoTotal += det.getPrecio() * det.getCantidad();
 			VentaDetalle nuevoDet = new VentaDetalle();
 			nuevoDet.setCantidad(det.getCantidad());
-			nuevoDet.setPrecio(det.getPrecio());
-			Producto p = productoEjb.findById(det.getIdProducto());
-			
+			nuevoDet.setPrecio(det.getPrecio());	
+			Producto p = ventaDao.findProducto(det.getIdProducto());
 			if(p==null){
 				return null;
 			}else{
 				p.setStock(p.getStock()-det.getCantidad());
-				em.persist(p);
 				nuevoDet.setProducto(p);
-				
+				ventaDao.updateProducto(p);
 			}
 			venta.getVentaDetalles().add(nuevoDet);
 			nuevoDet.setVenta(venta);
 		}
 		venta.setMontoTotal(montoTotal);
+		ventaDao.persist(venta);
+		ventaDao.commit();
+		clienteDao.close();
 		return venta;
 	}
 

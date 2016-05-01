@@ -16,6 +16,7 @@ import py.pol.una.ii.pw.mapper.ClienteMapper;
 import py.pol.una.ii.pw.mapper.CompraMapper;
 import py.pol.una.ii.pw.mapper.ProductoMapper;
 import py.pol.una.ii.pw.mapper.ProveedorMapper;
+import py.pol.una.ii.pw.mapper.VentaMapper;
 
 
 @Singleton
@@ -39,6 +40,7 @@ public class MyBatisSingleton {
 		configuration.addMapper(ProveedorMapper.class);
 		configuration.addMapper(CompraMapper.class);
 		configuration.addMapper(ProductoMapper.class);
+		configuration.addMapper(VentaMapper.class);
 		sqlSessionFactory = new SqlSessionFactoryBuilder().build(configuration);
 
 		System.out.println("Inicialización");
