@@ -11,15 +11,25 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.TypedQuery;
 
-import py.pol.una.ii.pw.dao.VentaDAO;
-import py.pol.una.ii.pw.dao.ProductoDAO;
-import py.pol.una.ii.pw.dao.ClienteDAO;
+import org.apache.ibatis.mapping.Environment;
+import org.apache.ibatis.session.Configuration;
+import org.apache.ibatis.session.SqlSession;
+import org.apache.ibatis.session.SqlSessionFactory;
+import org.apache.ibatis.session.SqlSessionFactoryBuilder;
+import org.apache.ibatis.transaction.TransactionFactory;
+import org.apache.ibatis.transaction.managed.ManagedTransactionFactory;
+
 import py.pol.una.ii.pw.dto.VentaDetalleDto;
 import py.pol.una.ii.pw.dto.VentaDto;
+import py.pol.una.ii.pw.mapper.ClienteMapper;
+import py.pol.una.ii.pw.mapper.CompraMapper;
+import py.pol.una.ii.pw.mapper.ProductoMapper;
+import py.pol.una.ii.pw.mapper.ProveedorMapper;
+import py.pol.una.ii.pw.mapper.VentaMapper;
+import py.pol.una.ii.pw.model.Cliente;
+import py.pol.una.ii.pw.model.Producto;
 import py.pol.una.ii.pw.model.Venta;
 import py.pol.una.ii.pw.model.VentaDetalle;
-import py.pol.una.ii.pw.model.Producto;
-import py.pol.una.ii.pw.model.Cliente;
 import py.pol.una.ii.pw.util.Respuesta;
 
 @Stateless
@@ -29,13 +39,16 @@ public class VentaEjb {
 	private EntityManager em;
 	
 	@EJB
-	private VentaDAO ventaDao;
+	private MyBatisSingleton mb;
 	
-	@EJB
-	private ClienteDAO clienteDao;
+	private SqlSession session;
 	
-	@EJB
-	private ProductoDAO productoDao;
+	private VentaMapper cm;
+	
+	private ProductoMapper pm;
+
+	private ClienteMapper cmCliente;
+
 	
 	@TransactionAttribute(TransactionAttributeType.REQUIRED)
 	public Respuesta<Venta> alta(VentaDto ventaDto){
@@ -65,6 +78,7 @@ public class VentaEjb {
 			r.setData(null);
 			r.setMessages("Error al persistir la venta");
 			r.setReason(e.getMessage());
+			e.printStackTrace();
 		}
 		return r;
 	}
@@ -101,37 +115,98 @@ public class VentaEjb {
 		return null;
 	}
 	
-	
+	public Cliente findByIdCliente(String ruc){
+		if(cmCliente!=null){
+			return cmCliente.getCliente(ruc);
+		}else{
+			return null;
+		}
+	}
 	
 	private Venta nuevaVenta(VentaDto ventaDto){
+		init();
 		Venta venta = new Venta(ventaDto);
-		clienteDao.init();
-		Cliente cliente = clienteDao.findById(ventaDto.getRucCliente());
+		Cliente cliente = findByIdCliente(ventaDto.getRucCliente());
 		venta.setCliente(cliente);
 		Integer montoTotal = 0;
 		venta.setFecha(new Date());
-		ventaDao.init();
 		for(VentaDetalleDto det : ventaDto.getVentaDetalles()){
 			montoTotal += det.getPrecio() * det.getCantidad();
 			VentaDetalle nuevoDet = new VentaDetalle();
 			nuevoDet.setCantidad(det.getCantidad());
 			nuevoDet.setPrecio(det.getPrecio());	
-			Producto p = ventaDao.findProducto(det.getIdProducto());
+			Producto p = findProducto(det.getIdProducto());
 			if(p==null){
 				return null;
 			}else{
 				p.setStock(p.getStock()-det.getCantidad());
 				nuevoDet.setProducto(p);
-				ventaDao.updateProducto(p);
+				updateProducto(p);
 			}
 			venta.getVentaDetalles().add(nuevoDet);
 			nuevoDet.setVenta(venta);
 		}
 		venta.setMontoTotal(montoTotal);
-		ventaDao.persist(venta);
-		ventaDao.commit();
-		clienteDao.close();
+		persist(venta);
 		return venta;
+	}
+	
+	public void init(){
+		TransactionFactory transactionFactory = new ManagedTransactionFactory();
+		Environment environment = new Environment("development", transactionFactory, mb.getSource());
+		Configuration configuration = new Configuration(environment);
+		configuration.addMapper(ClienteMapper.class);
+		configuration.addMapper(ProveedorMapper.class);
+		configuration.addMapper(CompraMapper.class);
+		configuration.addMapper(ProductoMapper.class);
+		configuration.addMapper(VentaMapper.class);
+		SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(configuration);
+		session = sqlSessionFactory.openSession();
+		try {
+			cm = session.getMapper(VentaMapper.class);
+			pm = session.getMapper(ProductoMapper.class);
+			cmCliente = session.getMapper(ClienteMapper.class);
+		} catch (Exception e) {
+			System.out.println("Error al abrir la base de datos");
+			System.out.println(e.getMessage());
+		}
+	}
+	
+	public void persist(Venta c){
+		if(session!=null){
+			try {
+				Long id_venta = cm.generarIdVenta();
+				cm.persistVenta(id_venta, c.getFecha(), c.getMontoTotal(), c.getCliente().getRuc());
+				for(VentaDetalle det: c.getVentaDetalles()){
+					cm.nuevoDetalle(cm.generarIdVentaDetalle(), det.getCantidad(), det.getPrecio(), id_venta, det.getProducto().getId());
+				}
+			} catch (Exception e) {
+				System.out.println("Hubo un error persist venta 1");
+				e.printStackTrace();
+				System.out.println(e.getMessage());
+			}
+			
+		}
+	}
+	
+	public void updateProducto(Producto p){
+		if(session!=null){
+			try {
+				pm.udateProducto(p.getId(), p.getActivo(), p.getNombre(), p.getPrecio(), p.getStock());
+			} catch (Exception e) {
+				System.out.println("Error al actualizar stock de producto");
+				e.printStackTrace();
+				System.out.println(e.getMessage());
+			}
+		}
+	}
+	
+	public Producto findProducto(Long id){
+		if(session!=null){
+			return pm.getProducto(id);
+		}else{
+			return null;
+		}
 	}
 
 }

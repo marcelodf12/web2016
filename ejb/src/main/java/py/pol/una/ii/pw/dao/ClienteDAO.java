@@ -6,9 +6,19 @@ import javax.ejb.EJB;
 import javax.ejb.Remove;
 import javax.ejb.Stateful;
 
+import org.apache.ibatis.mapping.Environment;
+import org.apache.ibatis.session.Configuration;
 import org.apache.ibatis.session.SqlSession;
+import org.apache.ibatis.session.SqlSessionFactory;
+import org.apache.ibatis.session.SqlSessionFactoryBuilder;
+import org.apache.ibatis.transaction.TransactionFactory;
+import org.apache.ibatis.transaction.managed.ManagedTransactionFactory;
 
 import py.pol.una.ii.pw.mapper.ClienteMapper;
+import py.pol.una.ii.pw.mapper.CompraMapper;
+import py.pol.una.ii.pw.mapper.ProductoMapper;
+import py.pol.una.ii.pw.mapper.ProveedorMapper;
+import py.pol.una.ii.pw.mapper.VentaMapper;
 import py.pol.una.ii.pw.model.Cliente;
 import py.pol.una.ii.pw.service.MyBatisSingleton;
 
@@ -23,7 +33,16 @@ public class ClienteDAO {
 	private ClienteMapper cm;
 	
 	public void init(){
-		session = mb.getSession();
+		TransactionFactory transactionFactory = new ManagedTransactionFactory();
+		Environment environment = new Environment("development", transactionFactory, mb.getSource());
+		Configuration configuration = new Configuration(environment);
+		configuration.addMapper(ClienteMapper.class);
+		configuration.addMapper(ProveedorMapper.class);
+		configuration.addMapper(CompraMapper.class);
+		configuration.addMapper(ProductoMapper.class);
+		configuration.addMapper(VentaMapper.class);
+		SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(configuration);
+		session = sqlSessionFactory.openSession();
 		try {
 			cm = session.getMapper(ClienteMapper.class);
 		} catch (Exception e) {
