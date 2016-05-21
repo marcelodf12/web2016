@@ -29,4 +29,9 @@ public interface ProductoMapper {
 			@Param("precio") Integer precio,
 			@Param("stock") Integer stock
 			);
+	@Update("UPDATE productos SET stock=#{stock} WHERE id_producto=#{id_producto};")
+	void udateProductoStock(
+			@Param("id_producto") Long id_producto,
+			@Param("stock") Integer stock
+			);
 }

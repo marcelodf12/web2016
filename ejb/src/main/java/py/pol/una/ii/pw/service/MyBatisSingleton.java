@@ -21,11 +21,9 @@ public class MyBatisSingleton {
 		source.setPassword("postgres");
 		source.setMaxConnections(1000);
 		System.out.println("Inicialización");
-		System.out.println(source);
 	}
 	
 	public PGPoolingDataSource getSource(){
-		System.out.println(source);
 		return source;
 	}
 }

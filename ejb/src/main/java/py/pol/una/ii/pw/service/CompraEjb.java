@@ -7,9 +7,6 @@ import javax.ejb.EJB;
 import javax.ejb.Stateless;
 import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
-import javax.persistence.TypedQuery;
 
 import org.apache.ibatis.mapping.Environment;
 import org.apache.ibatis.session.Configuration;
@@ -25,16 +22,12 @@ import py.pol.una.ii.pw.mapper.CompraMapper;
 import py.pol.una.ii.pw.mapper.ProductoMapper;
 import py.pol.una.ii.pw.mapper.ProveedorMapper;
 import py.pol.una.ii.pw.model.Compra;
-import py.pol.una.ii.pw.model.CompraDetalle;
 import py.pol.una.ii.pw.model.Producto;
 import py.pol.una.ii.pw.model.Proveedor;
 import py.pol.una.ii.pw.util.Respuesta;
 
 @Stateless
 public class CompraEjb {
-	
-	@PersistenceContext
-	private EntityManager em;
 	
 	@EJB
 	private MyBatisSingleton mb;
@@ -104,16 +97,16 @@ public class CompraEjb {
 	}
 	
 	private List<Compra> findAll(){
-		TypedQuery<Compra> query = em.createQuery(
+/*		TypedQuery<Compra> query = em.createQuery(
 				"SELECT c FROM Compra c", Compra.class);
 		List<Compra> e = query.getResultList();
 		if(e.size() > 0) {
 			return e;			
-		}
+		}*/
 		return null;
 	}
 	
-	public Proveedor findByIdProveedor(String ruc){
+	private Proveedor findByIdProveedor(String ruc){
 		if(cmProveedor!=null){
 			return cmProveedor.getProveedor(ruc);
 		}else{
@@ -126,38 +119,33 @@ public class CompraEjb {
 		Compra compra = new Compra(compraDto);
 		Proveedor proveedor = findByIdProveedor(compraDto.getRucProveedor());
 		compra.setProveedor(proveedor);
+		Long id_compra = cm.generarIdCompra();
 		Integer montoTotal = 0;
-		compra.setFecha(new Date());
 		for(CompraDetalleDto det : compraDto.getCompraDetalles()){
-			montoTotal += det.getPrecio() * det.getCantidad();
-			CompraDetalle nuevoDet = new CompraDetalle();
-			nuevoDet.setCantidad(det.getCantidad());
-			nuevoDet.setPrecio(det.getPrecio());	
-			Producto p = findProducto(det.getIdProducto());
-			if(p==null){
-				return null;
-			}else{
-				p.setStock(p.getStock()+det.getCantidad());
-				nuevoDet.setProducto(p);
-				updateProducto(p);
-			}
-			compra.getCompraDetalles().add(nuevoDet);
-			nuevoDet.setCompra(compra);
+			montoTotal += det.getCantidad() * det.getPrecio();
 		}
-		compra.setMontoTotal(montoTotal);
-		persist(compra);
+		cm.persistCompra(id_compra, new Date(), montoTotal, proveedor.getRuc());
+		
+		for(CompraDetalleDto det : compraDto.getCompraDetalles()){
+			Producto p = pm.getProducto(det.getIdProducto());
+			if(p!=null){
+				cm.nuevoDetalle(cm.generarIdCompraDetalle(), det.getCantidad(), det.getPrecio(), id_compra, p.getId());
+				pm.udateProductoStock(p.getId(), p.getStock()+det.getCantidad());
+			}else{
+				session.rollback();
+				break;
+			}
+		}
 		return compra;
 	}
 	
-	public void init(){
+	private void init(){
 		TransactionFactory transactionFactory = new ManagedTransactionFactory();
 		Environment environment = new Environment("development", transactionFactory, mb.getSource());
 		Configuration configuration = new Configuration(environment);
 		configuration.addMapper(ProveedorMapper.class);
-		configuration.addMapper(ProveedorMapper.class);
 		configuration.addMapper(CompraMapper.class);
 		configuration.addMapper(ProductoMapper.class);
-		configuration.addMapper(CompraMapper.class);
 		SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(configuration);
 		session = sqlSessionFactory.openSession();
 		try {
@@ -167,43 +155,6 @@ public class CompraEjb {
 		} catch (Exception e) {
 			System.out.println("Error al abrir la base de datos");
 			System.out.println(e.getMessage());
-		}
-	}
-	
-	public void persist(Compra c){
-		if(session!=null){
-			try {
-				Long id_compra = cm.generarIdCompra();
-				cm.persistCompra(id_compra, c.getFecha(), c.getMontoTotal(), c.getProveedor().getRuc());
-				for(CompraDetalle det: c.getCompraDetalles()){
-					cm.nuevoDetalle(cm.generarIdCompraDetalle(), det.getCantidad(), det.getPrecio(), id_compra, det.getProducto().getId());
-				}
-			} catch (Exception e) {
-				System.out.println("Hubo un error persist compra 1");
-				e.printStackTrace();
-				System.out.println(e.getMessage());
-			}
-			
-		}
-	}
-	
-	public void updateProducto(Producto p){
-		if(session!=null){
-			try {
-				pm.udateProducto(p.getId(), p.getActivo(), p.getNombre(), p.getPrecio(), p.getStock());
-			} catch (Exception e) {
-				System.out.println("Error al actualizar stock de producto");
-				e.printStackTrace();
-				System.out.println(e.getMessage());
-			}
-		}
-	}
-	
-	public Producto findProducto(Long id){
-		if(session!=null){
-			return pm.getProducto(id);
-		}else{
-			return null;
 		}
 	}
 
