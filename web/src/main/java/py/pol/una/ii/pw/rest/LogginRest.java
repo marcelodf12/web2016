@@ -11,7 +11,7 @@ import py.pol.una.ii.pw.dao.LoginDAO;
 import py.pol.una.ii.pw.dto.UsuarioDto;
 import py.pol.una.ii.pw.util.Respuesta;
 
-@Path("/producto")
+@Path("/credenciales")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class LogginRest {
