@@ -51,8 +51,8 @@ public class LoginDAO {
 			if(passMd5 == null)
 				return "";
 			String passMd5Test = new String(encriptaEnMD5(pass));
-			System.out.println("Autenticación");
-			System.out.print(passMd5 + "=" + passMd5Test);
+			//System.out.println("Autenticación");
+			//System.out.print(passMd5 + "=" + passMd5Test);
 			if(passMd5.compareTo(passMd5Test)==0){
 				String ultimoToken = cm.getToken(nombre);
 				if(ultimoToken.compareTo("#")==0){
@@ -61,6 +61,7 @@ public class LoginDAO {
 					String t = nombre + d.toString() +  Double.toString(rnd.nextDouble());
 					String token = new String(encriptaEnMD5(t));
 					cm.login(token, nombre);
+					session.close();
 					return token;
 				}else{
 					return ultimoToken;
@@ -69,6 +70,7 @@ public class LoginDAO {
 		} catch (Exception e) {
 			e.printStackTrace();
 			session.rollback();
+			session.close();
 			return "";
 		}
 		return "";
@@ -78,12 +80,21 @@ public class LoginDAO {
 		init();
 		try{
 			cm.logout(nombre);
+			session.close();
 			return true;
 		}catch (Exception e){
 			e.printStackTrace();
+			session.close();
 			return false;
 		}
 		
+	}
+	
+	public String getRol(String token){
+		init();
+		String rol = cm.getRol(token);
+		session.close();
+		return rol;
 	}
 	
 	 private char[] CONSTS_HEX = { '0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f' };

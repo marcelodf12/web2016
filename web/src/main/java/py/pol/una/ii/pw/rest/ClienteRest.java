@@ -16,6 +16,7 @@ import javax.ws.rs.core.MediaType;
 import py.pol.una.ii.pw.model.Cliente;
 import py.pol.una.ii.pw.service.ClienteEjb;
 import py.pol.una.ii.pw.util.Respuesta;
+import py.pol.una.ii.py.annotation.Secured;
 
 @Path("/cliente")
 @Produces(MediaType.APPLICATION_JSON)
@@ -27,6 +28,7 @@ public class ClienteRest {
 	
 	@GET
 	@Path("/{ruc}")
+	@Secured
 	public Respuesta<Cliente> buscar(@PathParam("ruc") String ruc){
 		return clienteEjb.buscarPorId(ruc);
 	}

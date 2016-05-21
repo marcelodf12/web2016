@@ -15,7 +15,7 @@ public interface LoginMapper {
 	@Select("SELECT token FROM USUARIOS WHERE nombre=#{n};")
 	String getToken(@Param("n") String n);
 	
-	@Select("SELECT rol FROM USUARIOS WHERE nombre=#{n};")
+	@Select("SELECT rol FROM USUARIOS WHERE token=#{n};")
 	String getRol(@Param("n") String n);
 	
 	@Select("SELECT pass FROM USUARIOS WHERE nombre=#{n};")

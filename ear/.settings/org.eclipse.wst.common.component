@@ -17,5 +17,8 @@
         <dependent-module archiveName="postgresql.jar" deploy-path="/lib" handle="module:/classpath/var/M2_REPO/postgresql/postgresql/9.1-901.jdbc4/postgresql-9.1-901.jdbc4.jar">
             <dependency-type>uses</dependency-type>
         </dependent-module>
+        <dependent-module archiveName="servlet-api.jar" deploy-path="/lib" handle="module:/classpath/var/M2_REPO/javax/servlet/servlet-api/2.4/servlet-api-2.4.jar">
+            <dependency-type>uses</dependency-type>
+        </dependent-module>
     </wb-module>
 </project-modules>
