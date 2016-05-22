@@ -8,6 +8,7 @@ import javax.ejb.Stateless;
 import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
 
+import org.apache.ibatis.exceptions.PersistenceException;
 import org.apache.ibatis.mapping.Environment;
 import org.apache.ibatis.session.Configuration;
 import org.apache.ibatis.session.SqlSession;
@@ -24,67 +25,65 @@ import py.pol.una.ii.pw.mapper.ProveedorMapper;
 import py.pol.una.ii.pw.model.Compra;
 import py.pol.una.ii.pw.model.Producto;
 import py.pol.una.ii.pw.model.Proveedor;
+import py.pol.una.ii.pw.util.NoExisteElProductoException;
 import py.pol.una.ii.pw.util.Respuesta;
 
 @Stateless
 public class CompraEjb {
-	
+
 	@EJB
 	private MyBatisSingleton mb;
-	
+
 	private SqlSession session;
-	
+
 	private CompraMapper cm;
-	
+
 	private ProductoMapper pm;
 
 	private ProveedorMapper cmProveedor;
 
-	
 	@TransactionAttribute(TransactionAttributeType.REQUIRED)
-	public Respuesta<Compra> alta(CompraDto compraDto){
+	public Respuesta<Compra> alta(CompraDto compraDto) {
 		Respuesta<Compra> r = new Respuesta<Compra>();
 		try {
 			Compra c = this.nuevaCompra(compraDto);
-			if(c == null){
-				r.setMessages("La compra no se puede persistir");
-				r.setReason("No existe un producto del detalle");
-				r.setSuccess(false);
-				r.setData(null);
-				return r;
-			}
-				
-			
-			if(c.getProveedor()==null){
-				r.setMessages("La compra no se puede persistir");
-				r.setReason("No existe el proveedor");
-				r.setSuccess(false);
-				r.setData(null);
-			}else{
-				r.setSuccess(true);
-				r.setMessages("Compra guardada correctamente");
-				r.setData(c);
-			}
+			r.setSuccess(true);
+			r.setMessages("Compra guardada correctamente");
+			r.setData(c);
+		}catch (NoExisteElProductoException e){
+			r.setData(null);
+			r.setMessages("La compra no se puede persistir");
+			r.setReason(e.getMessage());
+		}catch (NullPointerException e){
+			r.setData(null);
+			r.setMessages("La compra no se puede persistir");
+			r.setReason("No existe el proveedor");
+		}catch (PersistenceException e){
+			r.setData(null);
+			r.setMessages("La compra no se puede persistir");
+			r.setReason(e.getClass().toString());
+			//System.out.println(e.getClass().toString());
 		} catch (Exception e) {
 			r.setData(null);
-			r.setMessages("Error al persistir la compra");
-			r.setReason(e.getMessage());
-			e.printStackTrace();
+			r.setMessages("La compra no se puede persistir");
+			r.setReason(e.getClass().toString());
+			//e.printStackTrace();
+		} finally {
+			session.close();
 		}
 		return r;
 	}
-	
-	
-	public Respuesta<List<Compra>> listarTodos(){
+
+	public Respuesta<List<Compra>> listarTodos() {
 		Respuesta<List<Compra>> r = new Respuesta<List<Compra>>();
 		try {
 			List<Compra> data = this.findAll();
-			if(data == null){
+			if (data == null) {
 				r.setMessages("La base de datos esta vacia");
 				r.setSuccess(false);
-			}else{
+			} else {
 				r.setMessages("");
-				r.setSuccess(true);		
+				r.setSuccess(true);
 			}
 			r.setData(data);
 		} catch (Exception e) {
@@ -95,51 +94,50 @@ public class CompraEjb {
 		}
 		return r;
 	}
-	
-	private List<Compra> findAll(){
-/*		TypedQuery<Compra> query = em.createQuery(
-				"SELECT c FROM Compra c", Compra.class);
-		List<Compra> e = query.getResultList();
-		if(e.size() > 0) {
-			return e;			
-		}*/
+
+	private List<Compra> findAll() {
+		/*
+		 * TypedQuery<Compra> query = em.createQuery( "SELECT c FROM Compra c",
+		 * Compra.class); List<Compra> e = query.getResultList(); if(e.size() >
+		 * 0) { return e; }
+		 */
 		return null;
 	}
-	
-	private Proveedor findByIdProveedor(String ruc){
-		if(cmProveedor!=null){
+
+	private Proveedor findByIdProveedor(String ruc) {
+		if (cmProveedor != null) {
 			return cmProveedor.getProveedor(ruc);
-		}else{
+		} else {
 			return null;
 		}
 	}
-	
-	private Compra nuevaCompra(CompraDto compraDto){
+
+	private Compra nuevaCompra(CompraDto compraDto) throws NoExisteElProductoException {
 		init();
 		Compra compra = new Compra(compraDto);
 		Proveedor proveedor = findByIdProveedor(compraDto.getRucProveedor());
 		compra.setProveedor(proveedor);
 		Long id_compra = cm.generarIdCompra();
 		Integer montoTotal = 0;
-		for(CompraDetalleDto det : compraDto.getCompraDetalles()){
+		for (CompraDetalleDto det : compraDto.getCompraDetalles()) {
 			montoTotal += det.getCantidad() * det.getPrecio();
 		}
 		cm.persistCompra(id_compra, new Date(), montoTotal, proveedor.getRuc());
-		
-		for(CompraDetalleDto det : compraDto.getCompraDetalles()){
+
+		for (CompraDetalleDto det : compraDto.getCompraDetalles()) {
 			Producto p = pm.getProducto(det.getIdProducto());
-			if(p!=null){
+			if (p != null) {
 				cm.nuevoDetalle(cm.generarIdCompraDetalle(), det.getCantidad(), det.getPrecio(), id_compra, p.getId());
-				pm.udateProductoStock(p.getId(), p.getStock()+det.getCantidad());
-			}else{
+				pm.udateProductoStock(p.getId(), p.getStock() + det.getCantidad());
+			} else {
 				session.rollback();
-				break;
+				throw new NoExisteElProductoException("No existe el producto con id " + det.getIdProducto());
 			}
 		}
 		return compra;
 	}
-	
-	private void init(){
+
+	private void init() {
 		TransactionFactory transactionFactory = new ManagedTransactionFactory();
 		Environment environment = new Environment("development", transactionFactory, mb.getSource());
 		Configuration configuration = new Configuration(environment);

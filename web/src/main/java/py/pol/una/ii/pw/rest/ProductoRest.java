@@ -42,7 +42,7 @@ public class ProductoRest {
 
 	@Inject
 	private ProductoEjb productoEjb;
-	
+
 	@EJB
 	ProductoEjbStateful productoEjbStateful;
 
@@ -54,18 +54,19 @@ public class ProductoRest {
 
 	@GET
 	@Path("/pagina")
-	public Respuesta<Pagina<Producto>> buscar(@QueryParam("inicio") Integer inicio, @QueryParam("cantidad") Integer cant) {
+	public Respuesta<Pagina<Producto>> buscar(@QueryParam("inicio") Integer inicio,
+			@QueryParam("cantidad") Integer cant) {
 		return productoEjb.listarTodos(inicio, cant);
 	}
-	
+
 	@GET
 	@Produces("multipart/form-data")
-	public MultipartFormDataOutput  buscarTodos(){
+	public MultipartFormDataOutput buscarTodos() {
 		MultipartFormDataOutput output = new MultipartFormDataOutput();
 		productoEjbStateful.iniciar();
-		while(productoEjbStateful.hasNext()){
+		while (productoEjbStateful.hasNext()) {
 			Producto p = productoEjbStateful.nextProducto();
-			if(p!=null){
+			if (p != null) {
 				ProductoDto p1 = new ProductoDto(p);
 				output.addPart(p1.cad(), MediaType.APPLICATION_XML_TYPE);
 			}
@@ -92,8 +93,8 @@ public class ProductoRest {
 		return productoEjb.eliminar(id);
 	}
 
-	private final String UPLOADED_FILE_PATH = "c:\\home\\";
-	
+	private final static String UPLOADED_FILE_PATH = "c:\\home\\";
+
 	@POST
 	@Path("/file")
 	@Consumes("multipart/form-data")
@@ -129,7 +130,7 @@ public class ProductoRest {
 				r.setMessages("IOException");
 				r.setReason(e.getMessage());
 				e.printStackTrace();
-			} catch ( Exception e) {
+			} catch (Exception e) {
 				r = new Respuesta<String>();
 				r.setSuccess(false);
 				r.setMessages("Exception");
@@ -150,36 +151,42 @@ public class ProductoRest {
 		String[] contentDisposition = header.getFirst("Content-Disposition").split(";");
 
 		Random rnd = new Random();
-		Integer ram = new Integer((int) (rnd.nextDouble()*1000+1));
-		
+		Integer ram = Integer.valueOf((int) (rnd.nextDouble() * 1000 + 1));
+
 		for (String filename : contentDisposition) {
 			if ((filename.trim().startsWith("filename"))) {
 
 				String[] name = filename.split("=");
 
 				String finalFileName = name[1].trim().replaceAll("\"", "");
-				
-				
+
 				return finalFileName + ram.toString() + ".txt";
 			}
 		}
 		return "unknown" + ram.toString() + ".txt";
 	}
 
-	
 	private void writeFile(byte[] content, String filename) throws IOException {
 
 		File file = new File(filename);
+		boolean fileCreated = false;
+		FileOutputStream fop = null;
 
 		if (!file.exists()) {
-			file.createNewFile();
+			fileCreated = file.createNewFile();
 		}
 
-		FileOutputStream fop = new FileOutputStream(file);
-
-		fop.write(content);
-		fop.flush();
-		fop.close();
+		if (fileCreated) {
+			
+			try{
+				fop = new FileOutputStream(file);
+				fop.write(content);
+				fop.flush();
+			}finally{
+				if(fop!=null)
+					fop.close();
+			}
+		}
 
 	}
 }

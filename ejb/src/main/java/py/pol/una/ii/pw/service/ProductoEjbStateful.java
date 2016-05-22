@@ -28,14 +28,14 @@ public class ProductoEjbStateful {
 	
 	public Producto nextProducto(){
 		System.out.print("++++ ");
-		Producto p = iterator.next();
+		Producto p = iterator == null? null: iterator.next();
 		System.out.println(p);
 		return p;
 	}
 	
 	public boolean hasNext(){
 		System.out.print("- ");
-		boolean r = iterator.hasNext();
+		boolean r = iterator==null? false : iterator.hasNext();
 		System.out.println(r);
 		return r;
 	}

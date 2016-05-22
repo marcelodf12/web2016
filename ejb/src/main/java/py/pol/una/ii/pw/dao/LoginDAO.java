@@ -1,5 +1,6 @@
 package py.pol.una.ii.pw.dao;
 
+import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Date;
@@ -50,7 +51,7 @@ public class LoginDAO {
 			String passMd5 = cm.getPass(nombre);
 			if(passMd5 == null)
 				return "";
-			String passMd5Test = new String(encriptaEnMD5(pass));
+			String passMd5Test = encriptaEnMD5(pass);
 			//System.out.println("Autenticación");
 			//System.out.print(passMd5 + "=" + passMd5Test);
 			if(passMd5.compareTo(passMd5Test)==0){
@@ -59,7 +60,7 @@ public class LoginDAO {
 					Random rnd = new Random();
 					Date d = new Date();
 					String t = nombre + d.toString() +  Double.toString(rnd.nextDouble());
-					String token = new String(encriptaEnMD5(t));
+					String token = encriptaEnMD5(t);
 					cm.login(token, nombre);
 					session.close();
 					return token;
@@ -104,7 +105,7 @@ public class LoginDAO {
 	        try
 	        {
 	           MessageDigest msgd = MessageDigest.getInstance("MD5");
-	           byte[] bytes = msgd.digest(stringAEncriptar.getBytes());
+	           byte[] bytes = msgd.digest(stringAEncriptar.getBytes(Charset.forName("UTF-8")));
 	           StringBuilder strbCadenaMD5 = new StringBuilder(2 * bytes.length);
 	           for (int i = 0; i < bytes.length; i++)
 	           {

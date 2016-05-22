@@ -23,11 +23,11 @@ public class VentaDto {
 	}
 
 	public Date getFecha() {
-		return fecha;
+		return fecha==null ? null : new Date(fecha.getTime());
 	}
 
 	public void setFecha(Date fecha) {
-		this.fecha = fecha;
+		this.fecha = fecha==null? null : new Date(fecha.getTime());
 	}
 
 	public Integer getMontoTotal() {
