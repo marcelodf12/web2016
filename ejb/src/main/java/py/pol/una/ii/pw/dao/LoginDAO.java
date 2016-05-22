@@ -62,7 +62,7 @@ public class LoginDAO {
 					String t = nombre + d.toString() +  Double.toString(rnd.nextDouble());
 					String token = encriptaEnMD5(t);
 					cm.login(token, nombre);
-					session.close();
+					
 					return token;
 				}else{
 					return ultimoToken;
@@ -71,23 +71,25 @@ public class LoginDAO {
 		} catch (Exception e) {
 			e.printStackTrace();
 			session.rollback();
-			session.close();
 			return "";
+		} finally {
+			session.close();
 		}
 		return "";
 	}
 	
 	public boolean logout(String nombre){
 		init();
+		boolean r = false;
 		try{
 			cm.logout(nombre);
-			session.close();
-			return true;
+			r= true;
 		}catch (Exception e){
 			e.printStackTrace();
+		} finally {
 			session.close();
-			return false;
 		}
+		return r;
 		
 	}
 	
