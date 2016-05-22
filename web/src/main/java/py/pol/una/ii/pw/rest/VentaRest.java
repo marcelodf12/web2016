@@ -14,6 +14,7 @@ import py.pol.una.ii.pw.dto.VentaDto;
 import py.pol.una.ii.pw.model.Venta;
 import py.pol.una.ii.pw.service.VentaEjb;
 import py.pol.una.ii.pw.util.Respuesta;
+import py.pol.una.ii.py.annotation.Secured;
 
 @Path("/venta")
 @Produces(MediaType.APPLICATION_JSON)
@@ -29,6 +30,7 @@ public class VentaRest {
 	}
 	
 	@POST
+	@Secured(rol="V")
 	public Respuesta<Venta> alta(VentaDto c){
 		Respuesta<Venta> r = new Respuesta<Venta>();
 		try {

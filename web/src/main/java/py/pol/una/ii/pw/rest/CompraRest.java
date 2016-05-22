@@ -14,6 +14,7 @@ import py.pol.una.ii.pw.dto.CompraDto;
 import py.pol.una.ii.pw.model.Compra;
 import py.pol.una.ii.pw.service.CompraEjb;
 import py.pol.una.ii.pw.util.Respuesta;
+import py.pol.una.ii.py.annotation.Secured;
 
 @Path("/compra")
 @Produces(MediaType.APPLICATION_JSON)
@@ -29,6 +30,7 @@ public class CompraRest {
 	}
 	
 	@POST
+	@Secured(rol="C")
 	public Respuesta<Compra> alta(CompraDto c){
 		return compraEjb.alta(c);
 	}
